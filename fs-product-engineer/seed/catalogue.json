@@ -1,0 +1,74 @@
+[
+  {
+    "id": "sofa-2-seater",
+    "name": "Sofa (2-seater)",
+    "category": "furniture",
+    "baseFee": 35.00
+  },
+  {
+    "id": "sofa-3-seater",
+    "name": "Sofa (3-seater)",
+    "category": "furniture",
+    "baseFee": 45.00
+  },
+  {
+    "id": "armchair",
+    "name": "Armchair",
+    "category": "furniture",
+    "baseFee": 20.00
+  },
+  {
+    "id": "mattress-single",
+    "name": "Mattress (single)",
+    "category": "furniture",
+    "baseFee": 25.00
+  },
+  {
+    "id": "mattress-double",
+    "name": "Mattress (double)",
+    "category": "furniture",
+    "baseFee": 30.00
+  },
+  {
+    "id": "fridge",
+    "name": "Fridge",
+    "category": "appliances",
+    "baseFee": 40.00
+  },
+  {
+    "id": "fridge-freezer",
+    "name": "Fridge-freezer",
+    "category": "appliances",
+    "baseFee": 50.00
+  },
+  {
+    "id": "washing-machine",
+    "name": "Washing machine",
+    "category": "appliances",
+    "baseFee": 40.00
+  },
+  {
+    "id": "tv-large",
+    "name": "TV (large)",
+    "category": "electronics",
+    "baseFee": 25.00
+  },
+  {
+    "id": "bin-bag",
+    "name": "Bin bag",
+    "category": "general",
+    "baseFee": 5.00
+  },
+  {
+    "id": "cardboard-bundle",
+    "name": "Cardboard bundle",
+    "category": "general",
+    "baseFee": 7.50
+  },
+  {
+    "id": "garden-waste-bag",
+    "name": "Garden waste bag",
+    "category": "garden",
+    "baseFee": 6.00
+  }
+]

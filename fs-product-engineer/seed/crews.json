@@ -1,0 +1,6 @@
+[
+  { "id": "crew-1", "name": "Crew 1 — Alex & Sam", "vehicle": "Luton van" },
+  { "id": "crew-2", "name": "Crew 2 — Priya & Jordan", "vehicle": "Luton van" },
+  { "id": "crew-3", "name": "Crew 3 — John & Steve", "vehicle": "Cage Van" },
+  { "id": "crew-4", "name": "Crew 4 — Femi & Casey", "vehicle": "Cage Van" }
+]
