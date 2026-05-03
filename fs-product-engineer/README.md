@@ -84,7 +84,7 @@ On the product side, we care about design. We don't have designers, so you'll ne
 
 ## Product judgement writeup
 
-In [`SUBMISSION.md`](SUBMISSION.md) (template provided), a couple of sentences each on:
+A couple of sentences each on:
 
 1. **What you'd build next, and why.** With another two days, what's highest-value? What would you push back on if a PM asked for it?
 2. **One trade-off you made and how you'd revisit it at scale.** What would change at 100 bookings/day vs 10,000?
@@ -93,14 +93,16 @@ In [`SUBMISSION.md`](SUBMISSION.md) (template provided), a couple of sentences e
 
 ## What to submit
 
-A **private GitHub repo** (invite `@litta-hiring`) containing:
+A **public GitHub repo** containing:
 
 - The code
-- An updated `README.md` (or `SUBMISSION.md`) with:
+- A `README.md` with:
   - How to run it (the commands you actually used, in order, including the runtime/package manager you chose)
   - Anything you didn't finish or want to comment on
   - The product judgement writeup described above
   - Any assumptions you made about the brief
+
+If you'd prefer the code not be public you can invite the hiring manager as a private contributor.
 
 ---
 
