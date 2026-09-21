@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Category {
+  GENERAL
+  ELECTRONICS
+  APPLIANCES
+  FURNITURE
+  GARDEN
+}
+
+enum VehicleType {
+  LUTON
+  CAGE
+}
+
+enum Status {
+  PENDING
+  ASSIGNED
+  COMPLETED
+}
+
+model Item {
+  id           String   @id @default(uuid())
+  slug         String   @unique
+  name         String
+  category     Category
+  baseFeePence Int
+
+  lineItems LineItem[]
+}
+
+model Crew {
+  id      String      @id @default(uuid())
+  slug    String      @unique
+  name    String
+  vehicle VehicleType
+
+  bookings Booking[]
+}
+
+model LineItem {
+  id             String  @id @default(uuid())
+  booking        Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId      String
+  item           Item    @relation(fields: [itemId], references: [id])
+  itemId         String
+  quantity       Int
+  // Snapshot of the catalogue price at booking time, so later price changes don't rewrite history.
+  unitPricePence Int
+  lineTotalPence Int
+
+  @@index([bookingId])
+}
+
+model Booking {
+  id               String @id @default(uuid())
+  bookingReference String @unique
+
+  bookingStatus Status @default(PENDING)
+  lineItems     LineItem[]
+
+  postcode String
+
+  customerName  String
+  customerEmail String
+  customerPhone String?
+
+  // quotePence is the total: subtotalPence + postcodeSurchargePence.
+  subtotalPence          Int
+  postcodeSurchargePence Int
+  quotePence             Int
+
+  assignedCrew   Crew?   @relation(fields: [assignedCrewId], references: [id])
+  assignedCrewId String?
+
+  createdAt   DateTime  @default(now())
+  assignedAt  DateTime?
+  completedAt DateTime?
+
+  @@index([createdAt])
+}

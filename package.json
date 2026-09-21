@@ -1,0 +1,27 @@
+{
+  "name": "hiring-take-home-exercises",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "turbo run dev --filter=web --filter=api",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.24.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@11.24.0",
+  "type": "module",
+  "devDependencies": {
+    "turbo": "^2.11.2"
+  },
+  "private": true
+}
