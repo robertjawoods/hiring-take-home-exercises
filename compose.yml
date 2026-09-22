@@ -15,5 +15,45 @@ services:
       timeout: 3s
       retries: 10
 
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: sh -c "pnpm --filter database db:migrate:deploy && pnpm --filter database db:seed"
+    environment:
+      DATABASE_URL: postgresql://admin:litta@db:5432/litta
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://admin:litta@db:5432/litta
+      CORS_ORIGIN: http://localhost:5173
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      API_URL: http://api:3000
+      ORIGIN: http://localhost:5173
+      PORT: 3000
+    ports:
+      - "5173:3000"
+    depends_on:
+      - api
+
 volumes:
   db-data:
