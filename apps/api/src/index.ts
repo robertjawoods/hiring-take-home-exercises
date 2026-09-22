@@ -1,14 +1,6 @@
 import { serve } from "@hono/node-server";
-import { db } from "database";
-import { Hono } from "hono";
 
-const app = new Hono();
-
-app.get("/health", (c) => c.json({ ok: true }));
-
-app.get("/catalogue", async (c) => c.json(await db.item.findMany({ orderBy: { name: "asc" } })));
-
-
+import { app } from "./app.ts";
 
 const port = Number(process.env.PORT ?? 3000);
 
