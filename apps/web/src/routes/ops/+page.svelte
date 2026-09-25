@@ -14,11 +14,6 @@
 	const pending = $derived(all.filter((b) => b.status === 'PENDING'));
 	const assigned = $derived(all.filter((b) => b.status === 'ASSIGNED'));
 	const completed = $derived(all.filter((b) => b.status === 'COMPLETED'));
-
-	$effect(() => {
-		const id = setInterval(() => bookingsQuery.refresh(), 10_000);
-		return () => clearInterval(id);
-	});
 </script>
 
 <main class="mx-auto max-w-[1360px] overflow-x-auto p-8">

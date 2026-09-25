@@ -20,6 +20,5 @@ export const app = new Hono()
 app.onError(onError);
 app.notFound(notFound);
 
-/** Import this type in the web app: `hc<AppType>(baseUrl)`. */
 export type AppType = typeof app;
 export type { ApiError } from "./errors.ts";

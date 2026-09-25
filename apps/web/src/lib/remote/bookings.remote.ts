@@ -32,8 +32,13 @@ const completeInput = z.object({
 	reference: z.string().min(1)
 });
 
-/** Always "today" — the API's own Europe/London default; no date param is exposed. */
-export const getBookings = query(async () => unwrap(await api.bookings.$get({ query: {} })));
+export const getBookings = query.live(async function* () {
+	while (true) {
+		yield unwrap(await api.bookings.$get({ query: {} } ));
+
+		await new Promise((f) => setTimeout(f, 10000))
+	}
+});
 
 export const createBooking = form(
 	createBookingInput,
@@ -60,7 +65,7 @@ export const assignCrew = form(assignInput, async ({ reference, crewId }, issue)
 		if (failure.code === 'INVALID_TRANSITION') throw invalid(failure.message);
 		error(res.status as Parameters<typeof error>[0], failure.message);
 	}
-	await getBookings().refresh();
+	await getBookings().reconnect();
 	return (await res.json()) as SuccessJson<typeof res>;
 });
 
@@ -71,6 +76,6 @@ export const completeBooking = form(completeInput, async ({ reference }) => {
 		if (failure.code === 'INVALID_TRANSITION') throw invalid(failure.message);
 		error(res.status as Parameters<typeof error>[0], failure.message);
 	}
-	await getBookings().refresh();
+	await getBookings().reconnect();
 	return (await res.json()) as SuccessJson<typeof res>;
 });

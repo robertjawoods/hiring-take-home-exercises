@@ -5,7 +5,7 @@ import { AppError } from "../errors.ts";
 import { createBooking, getBooking, listBookings, transitionBooking } from "../bookings/service.ts";
 import { serializeBooking } from "../bookings/serialize.ts";
 import { assignBody, createBookingBody, listBookingsQuery, referenceParam, validate } from "../schemas.ts";
-import { londonToday } from "../time.ts";
+import { getDate } from "../time.ts";
 
 export const bookingRoutes = new Hono()
   .post("/", validate("json", createBookingBody), async (c) => {
@@ -13,7 +13,7 @@ export const bookingRoutes = new Hono()
     return c.json(serializeBooking(booking), 201);
   })
   .get("/", validate("query", listBookingsQuery), async (c) => {
-    const { date = londonToday() } = c.req.valid("query");
+    const { date = getDate() } = c.req.valid("query");
     const bookings = await listBookings(date);
     return c.json({ date, bookings: bookings.map(serializeBooking) }, 200);
   })

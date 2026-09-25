@@ -2,7 +2,7 @@ import { Prisma, db } from "database";
 
 import { AppError } from "../errors.ts";
 import { computeQuote, type BasketItem } from "../pricing/index.ts";
-import { londonDayBounds } from "../time.ts";
+import { getDayBounds } from "../time.ts";
 import { generateBookingReference } from "./reference.ts";
 import { bookingInclude } from "./serialize.ts";
 import { TRANSITIONS, type BookingAction } from "./transitions.ts";
@@ -63,7 +63,7 @@ export async function createBooking({ items, postcode, customer }: NewBooking) {
 }
 
 export function listBookings(date: string) {
-  const { start, end } = londonDayBounds(date);
+  const { start, end } = getDayBounds(date);
   return db.booking.findMany({
     where: { createdAt: { gte: start, lt: end } },
     include: bookingInclude,

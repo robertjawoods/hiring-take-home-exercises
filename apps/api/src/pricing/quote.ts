@@ -34,12 +34,8 @@ export class UnknownItemError extends Error {
   }
 }
 
-/**
- * quote = sum(baseFee * quantity) + postcodeSurcharge(postcode)
- *
- * Pure: the caller supplies the catalogue (item slug -> entry), so this needs no database.
- * Everything is integer pence, so there is no floating point to drift.
- */
+// quote = sum(baseFee * quantity) + postcodeSurcharge(postcode)
+
 export function computeQuote(
   catalogue: ReadonlyMap<string, CatalogueEntry>,
   items: readonly BasketItem[],

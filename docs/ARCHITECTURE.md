@@ -116,7 +116,7 @@ sequenceDiagram
 ```
 
 > **Why:** writing conditionally and checking `count` afterwards means two racing requests can't both
-> think they succeeded — no read-then-write gap for a double-assignment to slip through.
+> think they succeeded
 
 ## 4. Creating a booking
 

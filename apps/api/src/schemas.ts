@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { errorBody } from "./errors.ts";
 import { parsePostcode } from "./pricing/index.ts";
-import { isCalendarDate } from "./time.ts";
+import { isValidDate } from "./time.ts";
 
 const postcode = z
   .string()
@@ -42,7 +42,7 @@ export const createBookingBody = z.object({
 export const assignBody = z.object({ crewId: z.string().min(1) });
 
 export const listBookingsQuery = z.object({
-  date: z.string().refine(isCalendarDate, "Use a real date in YYYY-MM-DD format").optional(),
+  date: z.string().refine(isValidDate, "Use a real date in YYYY-MM-DD format").optional(),
 });
 
 export const referenceParam = z.object({

@@ -1,111 +1,72 @@
-Thank you for taking the time to apply to work at Litta. Please find below the brief for our Take Home exercise. We respect your time so please don't feel you have to spend more than **3–4 hours** on this. If you find yourself going past that, **stop and submit what you have**. We care more about how you make trade-offs than about feature completeness.
+# Litta Take Home 
 
-This is a **product engineer role**, so we'll mostly look at how you build and reason about the system. We also care that the result feels considered. A working backend with a UI that breaks on the first edge case won't pass.
+## Running the app 
+### Docker
+1. `docker compose up`- this brings up Postgres, runs the migrations and seeds the database, then starts the api (`:3000`) and web app (`:5173`)
+2. Visit `http://localhost:5173`
 
----
+### Development 
+This is a pnpm workspace (`apps/api`, `apps/web`, `packages/database`), so ensure pnpm is installed, then:
+1. `pnpm i` at the project root to install all required dependencies
+2. `pnpm --filter database db:generate` to generate the prisma client
+3. `pnpm dev` to run the full stack in development mode, or `pnpm --filter api dev` / `pnpm --filter web dev` to run just one side
+4. `pnpm test` to run the test suite (54 passing tests, mostly covering the pricing and booking logic)
+      1. If port 5432 is already taken locally, set `DB_PORT` in `.env` and docker compose will use that instead
 
-## The brief
 
-Build a small **booking & dispatch web app** with two surfaces.
+## Breakdown 
 
-### 1) Customer-facing quote & booking flow
+The solution consists of a monorepo containing two apps and a shared database package.
 
-A page where a customer can:
+### `apps/web`
+This is the front end application. It currently redirects from `/` to `/book`; in a real app, there would be a landing page with a CTA instead. The `/book` route is where customers book in and have their rubbish removed. It consists of a grid of items on the left-hand side and a panel on the right containing a form. The customer uses the grid to add products to their basket, with a quantity control on each grid item. Once finished, they fill in the form, have a quote calculated for them, and then have the ability to confirm their order. Once the order is submitted, they are provided with a booking reference.
 
-- Pick items from a catalogue (we've provided a seed list in [`seed/catalogue.json`](seed/catalogue.json): sofa, mattress, fridge, bin bag, etc., each with a `baseFee`)
-- Adjust quantities
-- Enter a UK postcode
-- See a **live quote** that updates as they change the basket
-- Confirm their basic details and book
+The `/ops` page is the internal dashboard for managing bookings. It's split into three tables: pending, assigned and completed. Each table is slightly different, highlighting the information relevant at that point in the journey. As each stage is acted upon, the booking moves down the page, intuitively guiding the user.
 
-The quote must be computed on the **backend** (don't put pricing logic in the browser). The pricing rule is:
+The ops dashboard is powered by a `query.live` remote function, which polls the data every 10s.
 
-```
-quote = sum(item.baseFee * quantity) + postcodeSurcharge(postcode)
-```
+The front end uses SvelteKit as its framework of choice. I like using SvelteKit because I find the runes system very intuitive, and because it's essentially just an HTML file with a script tag.
 
-`postcodeSurcharge` is a small function. You decide the rule, but it must vary by postcode area (e.g. London `E1` postcodes return one rate, everything else another).
+To make calls to the API, I use remote functions, which always execute on the server. For GET endpoints, these are essentially just wrappers around RPC functions exposed by the API application.
 
-When the customer confirms, persist a `Booking` (status `PENDING`) and show them a confirmation.
+### `apps/api`
+The backend is a Node application that uses Hono as its API framework. The API is split into four route files, each separated by domain concept: bookings, catalogue, crews and quotes. The supporting code for these lives in the `/pricing` and `/bookings` folders. The API uses `zod` for validation, wrapped in a helper function that's passed to each endpoint to keep error handling simple.
 
-### 2) Internal dispatch view
+Every non-2xx response comes back in the same shape, `{ error: { code, message, details? } }`, handled by a single `onError` catch-all rather than try/catch blocks scattered through each route. Domain errors like an unknown catalogue item, an invalid postcode or an out-of-sequence booking transition are thrown as a typed `AppError` and mapped to the right status code and error code in one place.
 
-A second route/page showing **all bookings for today**. Each row shows: booking reference, postcode, item summary, quote, status, assigned crew (if any).
+`/pricing` holds the quote calculation as a pure function: given a basket and a postcode it works out the subtotal, adds the postcode surcharge and returns the total, throwing if it hits an unknown item or an unrecognised postcode. Keeping it pure, with no database access, made it easy to unit test directly.
 
-From this view, an ops user can:
+`/bookings` holds the supporting logic for booking creation and status transitions. Booking references are random six-character codes (e.g. `LT-4F7K2M`), generated from an alphabet with the ambiguous characters (I, L, O, 0, 1) removed so they're easy to read back over the phone. Since the reference is the only unique column, a collision just means retrying the insert, which I cap at 5 attempts. Status transitions (`PENDING` → `ASSIGNED` → `COMPLETED`) are applied as a single conditional update, `WHERE bookingStatus = <expected>`, so if two requests race to move the same booking, exactly one succeeds and the other gets a 409 instead of silently overwriting it.
 
-- **Assign a crew** to a `PENDING` booking (pick from the list in [`seed/crews.json`](seed/crews.json)), moving it to `ASSIGNED`
-- **Mark an `ASSIGNED` booking as `COMPLETED`**
+### `packages/database`
+This is a shared package wrapping Prisma, so both apps talk to the database through the same generated client rather than each maintaining their own. It exports a `PrismaClient` instance (`db`) already wired up with the Postgres driver adapter, along with all the generated model types.
 
-No auth, maps or payment integration is required.
+The schema itself is small: `Item` and `Crew` are the catalogue and crew tables, `Booking` holds the customer, postcode and pricing details for an order, and `LineItem` links a booking to the items in it. Line items store their own `unitPricePence` and `lineTotalPence` rather than just referencing the catalogue, so a later price change doesn't rewrite the price of a booking that's already been placed.
 
----
+Migrations live in `prisma/migrations` and are applied with `prisma migrate deploy`, which is what the docker-compose `migrate` step runs. There's also a seed script that reads catalogue and crew fixtures from `/seed` and inserts them, which is what gives you data to work with on a fresh `docker compose up`.
 
-## Stack & constraints
 
-You **must** use:
-
-- **TypeScript**
-- **Docker**. `docker compose up` from the repo root should bring up the whole thing (api + frontend + db if you use one). Document any other commands needed.
-
-You **may** use:
-
-- **Any JS/TS runtime**: Node, Bun, Deno, whatever you're most comfortable with. We use a mix internally including Bun, so don't feel pinned to Node.
-- **Any package manager**: pnpm, bun, npm, yarn. Pick what suits.
-- **Any framework** on the backend (Express, Fastify, Hono, Elysia, NestJS, or none) and the frontend (React, Vue, plain, up to you).
-- **Any datastore**: SQLite, Postgres, in-memory. If in-memory, mention what you'd change for production.
-- **AI assistance** (Codex, Claude Code etc, let us know if you use something interesting!).
-  - Just remember we still need the candidate to understand and be able to reason about the code they're writing.
-
-The only thing we're firm on is TypeScript and `docker compose` working out of the box. Use whatever else gets you to a polished result fastest.
-
----
-
-## What we're looking for
-
-The bulk of what we'll grade on is engineering:
-
-- **It runs.** `docker compose up` (plus whatever else you document) gets us a working app on first try.
-- **The pricing logic is correct, isolated, and tested.** Even one or two unit tests on the pricing function tells us a lot.
-- **The API has a sensible shape.** Clear endpoints, validated input, errors that aren't just 500s.
-- **State transitions make sense.** A booking can't go from `COMPLETED` back to `PENDING`. A crew can't be assigned to a completed job.
-- **You knew when to stop.** Less is more. We'd rather see a smaller feature set that has been well polished.
-
-On the product side, we care about design. We don't have designers, so you'll need at least an eye for good UI. We're not expecting perfection, but the result should look and feel considered. We use Tailwind and CSS variables internally; you're welcome to use either, a component library, or roll your own. Sensible layout and hierarchy, loading and empty states, error handling that isn't `alert()`. If you spot a small unprompted improvement and have time, add it and call it out.
-
-### Things we are **not** grading on
-
-- Authentication / authorisation
-- Real-time updates (polling is fine; websockets are overkill)
-- Test coverage percentage. A few meaningful tests beat 100% of trivial ones.
-- Whether you used the "right" framework
-
----
+## Anything unfinished / worth flagging
+- `/` redirecting straight to `/book` 
+- The ops dashboard polling every 10 seconds instead of pushing updates is also a deliberate choice. The brief says polling is fine at this scale, but when lots of orders are coming in, pulling the whole table every 10s is not viable
+- There's no pagination or filtering on the dispatch list beyond today's date, this will not work at scale. There's a chance jobs span multiple days if there's not crew capacity to fulfil them. 
 
 ## Product judgement writeup
 
-A couple of sentences each on:
+### 1. What you'd build next, and why
+With two more days, I'd build crew scheduling and capacity first. Right now `/bookings/:reference/assign` will happily assign a crew that's already fully booked for the day, there's no check against how much work a crew already has. 
 
-1. **What you'd build next, and why.** With another two days, what's highest-value? What would you push back on if a PM asked for it?
-2. **One trade-off you made and how you'd revisit it at scale.** What would change at 100 bookings/day vs 10,000?
+After that, I'd add booking confirmation email or SMS. At the moment the only record of a booking is the reference shown on screen once; if the customer closes the tab, they've got nothing. It wouldn't need to be more than a simple transactional email.
 
----
+Another thing I'd build is the ability to filter by date. I'd also probably change the query to "all of todays jobs, and any that aren't yet completed". This is to make sure all jobs are tracked until completion and can't get lost. 
 
-## What to submit
+### 2. One trade-off, and how I'd revisit it at scale
+The trade-off I'd point to is how booking references are generated. `generateBookingReference` (`bookings/reference.ts`) draws a random six-character code, and `createBooking` (`bookings/service.ts`) retries the insert up to five times if that code collides with an existing reference, caught via Postgres's unique constraint on `bookingReference`. At current volume, with a keyspace of roughly 30 million codes and a handful of bookings a day, the odds of a collision are negligible, so this is simple and correct.
 
-A **public GitHub repo** containing:
+At scale, I'd use something that us much less likely to collide, like perhaps incorporating part of their email address or using an autoincremented reference.
 
-- The code
-- A `README.md` with:
-  - How to run it (the commands you actually used, in order, including the runtime/package manager you chose)
-  - Anything you didn't finish or want to comment on
-  - The product judgement writeup described above
-  - Any assumptions you made about the brief
-
-If you'd prefer the code not be public you can invite the hiring manager as a private contributor.
-
----
-
-## Questions
-
-If anything in this brief is unclear, please do not hesitate to **email the hiring manager and ask**. We'll happily clarify and asking the right question is itself a positive signal. Good luck!
+## Assumptions
+- Postcode surcharge: inner London postcode areas (E, EC, N, NW, SE, SW, W, WC) get a £15 surcharge, everywhere else is £5. This is a business rule I invented for the exercise, not something specified in the brief.
+- Booking reference format (`LT-XXXXXX`) is my own convention, also not specified in the brief.
+- One crew per booking, no multi-crew jobs.
+- No cancellation flow, the brief only specifies PENDING → ASSIGNED → COMPLETED.
