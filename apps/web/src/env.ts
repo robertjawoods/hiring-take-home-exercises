@@ -1,7 +1,8 @@
 import { defineEnvVars } from '@sveltejs/kit/env';
+import { z } from 'zod';
 
 export const variables = defineEnvVars({
 	API_URL: {
-		schema: (value) => value ?? 'http://localhost:3000'
+		schema: z.string().default('http://localhost:3000')
 	}
 });

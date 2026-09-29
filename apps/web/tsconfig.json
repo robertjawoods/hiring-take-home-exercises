@@ -1,9 +1,9 @@
 {
-	"extends": "$app/tsconfig",
+	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": {
 		"rewriteRelativeImportExtensions": true,
 		"sourceMap": true,
 		"strict": true
 	},
-	"include": ["src"]
+	"include": ["src", ".svelte-kit/ambient.d.ts", ".svelte-kit/env.d.ts", ".svelte-kit/non-ambient.d.ts"]
 }
