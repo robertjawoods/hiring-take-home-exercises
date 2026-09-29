@@ -18,6 +18,9 @@ COPY packages/database packages/database
 COPY apps/api apps/api
 COPY apps/web apps/web
 
+ARG ORIGIN
+ENV ORIGIN=$ORIGIN
+
 RUN pnpm --filter database db:generate
 RUN pnpm --filter web build
 
